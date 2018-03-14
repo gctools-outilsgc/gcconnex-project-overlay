@@ -1,0 +1,1 @@
+This directory contains all pictures pulled from relevant GCconnex groups.

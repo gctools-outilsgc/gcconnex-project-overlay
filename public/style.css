@@ -1,0 +1,204 @@
+body {
+  background-color: #fafafa;
+  overflow: hidden;
+  margin: 0;
+  font-size: 14px;
+  font-family: "Helvetica Neue", Helvetica;
+}
+
+#body {
+  width: 1200px;
+  margin: 0 auto;
+  position: relative;
+  
+}
+
+#bottom-bar {
+    position: fixed;
+    left: 0;
+    bottom: 0%;
+    width: 100%;
+    background-color: black;
+    height: 25px;
+    z-index: 1000;
+    justify-content: right;
+    -webkit-box-shadow: 0px 1px 18px 4px #000000; 
+box-shadow: 0px 1px 18px 4px #000000;
+}
+#name-tag {
+    color: white;
+    font-size: 17px;
+    padding-right: 5px;
+    padding-top: 3px;
+    transition: 500ms;
+    cursor: pointer;
+    float: right;
+    font-family: Lato,'Helvetica Neue',Arial,Helvetica,sans-serif;
+    transition-duration: 1s;
+}
+#name-tag:hover {
+  color: steelblue;
+}
+
+.vis-container {
+  z-index: -1;
+}
+
+#top-bar {
+  height: 80px;
+  z-index: 100;
+  position: relative;
+  background-color: #f7f7f7;
+  width: 1200px;
+  margin: 0 auto;
+  
+}
+#top-bar-overlay {
+  width: 100%;
+  height: 80px;
+  z-index: 99;
+  position: relative;
+  background-color: #f7f7f7;
+  -webkit-box-shadow: 0px 16px 28px 4px #F7F7F7; 
+box-shadow: 0px 16px 28px 4px #F7F7F7;
+  
+}
+
+#chart, #header, #footer {
+  position: absolute;
+  top: 0;
+}
+
+#header, #footer {
+  /*z-index: 1;*/
+  display: block;
+  font-size: 30px;
+  font-weight: 300;
+  text-shadow: 0 1px 0 #fff;
+}
+
+#header.inverted, #footer.inverted {
+  color: #fff;
+  text-shadow: 0 1px 4px #000;
+}
+
+#header {
+  top: 20px;
+  right: 10px;
+  width: 300px;
+  text-align: right;
+}
+
+.search-info {
+  font-family: "Helvetica Neue", Helvetica;
+  font-size: 17px;
+  color: #999;
+  padding-top: 10px;
+}
+
+#footer {
+  top: 520px;
+  right: 10px;
+  width: 300px;
+  text-align: right;
+}
+
+rect {
+  fill: none;
+  pointer-events: all;
+}
+
+pre {
+  font-size: 18px;
+}
+
+line {
+  stroke: #000;
+  stroke-width: 1.5px;
+}
+
+.string, .regexp {
+  color: #f39;
+}
+
+.keyword {
+  color: #00c;
+}
+
+.comment {
+  color: #777;
+  font-style: oblique;
+}
+
+.number {
+  color: #369;
+}
+
+.class, .special {
+  color: #1181B8;
+}
+
+a:link, a:visited {
+  color: steelblue;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #666;
+}
+
+.hint {
+  position: absolute;
+  right: 0;
+  font-size: 20px;
+  color: #999;
+}
+
+.node circle {
+  cursor: pointer;
+  fill: #fff;
+  stroke: steelblue;
+  stroke-width: 1.5px;
+}
+
+.node text {
+  font-size: 16px;
+}
+
+.node text:hover {
+    color: steelblue;
+}
+
+path.link {
+  fill: none;
+  stroke: #ccc;
+  stroke-width: 1.5px;
+}
+
+/* Add effects to projects nodes */
+.proj-text {
+    transition: text-shadow 500ms;
+}
+
+a .proj-text:hover {
+    text-shadow: 0px 0px 10px #A8A8A8!important;
+}
+
+.highlight-search {
+    fill: red!important;
+}
+
+/* tooltip styling */
+
+div.tooltip {	
+    position: absolute;			
+    text-align: center;			
+    width: 100px;					
+    height: 35px;	
+    padding: 2px;				
+    font: 12px sans-serif;		
+    background: lightsteelblue;	
+    border: 0px;		
+    border-radius: 8px;			
+    pointer-events: none;			
+}
