@@ -195,16 +195,18 @@ function update(source) {
                                 setTimeout(function() {
                                     var simGroup = vis.append("g")
                                         .classed("sim-group", true);
-                                    sims.similars.forEach(function(m){
+                                        console.log('new data received:')
+                                    console.log(d);
+                                    function callNext(index, children) {
                                         setTimeout(function() {
                                             // Draw the arc between d and m
                                             // calculate midpoints
-                                            var midX = (sims.origin.x + m.x) / 2;
+                                            var midX = (sims.origin.x + children[index].x) / 2;
                                             var midY = sims.origin.y +100;
                                             simGroup.append("path")
                                                 .classed("sim-line", true)
                                                 .attr("d", "M"+sims.origin.y+' '+sims.origin.x+
-                                                    ' Q '+400 +' '+ midX +' '+m.y+' '+m.x)
+                                                    ' Q '+400 +' '+ midX +' '+children[index].y+' '+children[index].x)
                                                 .attr("stroke", "gray")
                                                 .attr("stroke-dasharray", "5,5")
                                                 .attr("fill", "transparent")
@@ -213,8 +215,11 @@ function update(source) {
                                                 .transition()
                                                 .duration(1000)
                                                 .attr("opacity", 1);
-                                        }, 200)
-                                    })
+                                            if (++index < children.length)
+                                                callNext(index, children);
+                                        }, 100)
+                                    }
+                                    callNext(0, sims.similars)
                                 }, 400) // Shouldn't be using timers, get this in a callback!!
                                 
                                 // Iterate through array drawing connections

@@ -9,7 +9,6 @@ var app  = express();
 var ROOT = './public';
 
 // Return stacks of opened nodes required to show all results
-// Need to add feature to ignore duplicates
 function getSearchStacks(phrase, callback) {
     function doSearch(phrase, node, stack, stackList) {
         // Check if node is candidate
@@ -172,8 +171,6 @@ app.get('/', function(req, res){
     data = fs.readFileSync(ROOT + '/index.html');
     res.send(data);
 });
-
-
 
 app.listen(8080);
 console.log('golden')
