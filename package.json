@@ -1,0 +1,24 @@
+{
+  "name": "gcconnex-project-overlay",
+  "version": "1.0.0",
+  "description": "GCconnex Project Overlay App\r ============================",
+  "main": "app.js",
+  "dependencies": {
+    "body-parser": "^1.18.2",
+    "express": "^4.16.3"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ryanlacroix/gcconnex-project-overlay.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ryanlacroix/gcconnex-project-overlay/issues"
+  },
+  "homepage": "https://github.com/ryanlacroix/gcconnex-project-overlay#readme"
+}

@@ -1,50 +1,23 @@
 var express = require('express');
 var fs = require('fs');
+var bodyParser = require('body-parser');
 
 // Tree containing project hierarchy
 var treeStructure = require('./tree.json');
-var z = 0;
 
-// User clicked a node -> locate it in the tree
-// and send itself + immediate ancestors
-findClickedNode = (nodeID, root, callback) => {
-    locateNode = (nodeID, node, callback) => {
-        console.log('looking '+ String(z++));
-        if (node.token === nodeID) {
-            // Found it!
-            callback(node);
-            return 1;
-        }
-        if (!node.children)
-            return; // Bottomed out
-        for (var i=0;i<node.children.length;i++) {
-            if (locateNode(nodeID, node.children[i], callback))
-                return 1;
-        }
-    }
-    locateNode(nodeID, root, (node) => {
-        // Search complete
-        if (!node.children)
-            return; // This is a leaf. Browser shouldn't be reporting this!!
-        // Create a deep copy of the tree to snip
-        newTree = JSON.parse(JSON.stringify(node));
-        // Snip off ancestors of clicked node's children
-        for (var i=0;i<newTree.children.length;i++) {
-            if (newTree.children[i].children) {
-                delete newTree.children[i].children;
-            }
-        }
-        callback(newTree);
-    });
-}
+var app  = express();
+var ROOT = './public';
 
 // Return stacks of opened nodes required to show all results
 // Need to add feature to ignore duplicates
 function getSearchStacks(phrase, callback) {
     function doSearch(phrase, node, stack, stackList) {
         // Check if node is candidate
-        if ((node.name.toLowerCase().indexOf(phrase) !== -1)
-            ||    ( (node.description) && (node.description.toLowerCase().indexOf(phrase) !== -1))) {
+        // Check for array first. Move on to non-array search if not
+        if ( (Array.isArray(phrase) && // Array conditions
+                (( phrase.indexOf(String(node.token) ) !== -1 ) || (phrase.indexOf(String(node.guid)) !== -1 )))
+            || (node.name.toLowerCase().indexOf(phrase) !== -1)// Non-array conditions
+               || ( (node.description) && (node.description.toLowerCase().indexOf(phrase) !== -1))) {
             // This node is a candidate
             if (foundNames.indexOf(node.name.toLowerCase()) === -1) {
                 // This group is not already represented in the results. Add it in!
@@ -57,7 +30,7 @@ function getSearchStacks(phrase, callback) {
             return;
         }
         for (var i = 0; i < node.children.length; i++) {
-            stack.push(node.children[i].token);// stringify this if problematic
+            stack.push(node.children[i].token);
             doSearch(phrase, node.children[i], stack, stackList);
             stack.pop();
         }
@@ -69,8 +42,9 @@ function getSearchStacks(phrase, callback) {
     callback(resultStacks);
 }
 
-function openSearchedNodes(stackList) {
-    // Determine unique nodes to open by name
+function openSearchedNodes(stackList, phrases = null) {
+    // Determine unique nodes to open by name.
+    // Presence of phrases indicates this is a similarity search
     nodesToOpen = []
     stackList.forEach(function (d) {
         d.forEach(function (r) {
@@ -106,6 +80,13 @@ function openSearchedNodes(stackList) {
         // If this is a relevant project, highlight it
         if ((nodesToOpen.indexOf(node.token) !== -1) && (node.project === true)) {
             node.highlight = true;
+            // If this is involved in similarity search, mark it appropriately
+            if (phrases) {
+                if (String(node.token) === phrases.origin)
+                    node.origin = true;
+                else if(phrases.similars.indexOf(String(node.guid)) !== -1)
+                    node.similar = true;
+            }
         } else {
             node.highlight = false;
         }
@@ -117,17 +98,37 @@ function openSearchedNodes(stackList) {
     return treeCopy;
 }
 
-// Shuffle arrays to allow fairness across tags in search results
-function shuffle(a) {
-    for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [a[i], a[j]] = [a[j], a[i]];
+// User clicked a node -> locate it in the tree
+// and send itself + immediate ancestors
+findClickedNode = (nodeID, root, callback) => {
+    locateNode = (nodeID, node, callback) => {
+        if (node.token === nodeID) {
+            // Found it!
+            callback(node);
+            return 1;
+        }
+        if (!node.children)
+            return; // Bottomed out
+        for (var i=0;i<node.children.length;i++) {
+            if (locateNode(nodeID, node.children[i], callback))
+                return 1;
+        }
     }
-    return a;
+    locateNode(nodeID, root, (node) => {
+        // Search complete
+        if (!node.children)
+            return; // This is a leaf. Browser shouldn't be reporting this!!
+        // Create a deep copy of the tree to snip
+        newTree = JSON.parse(JSON.stringify(node));
+        // Snip off ancestors of clicked node's children
+        for (var i=0;i<newTree.children.length;i++) {
+            if (newTree.children[i].children) {
+                delete newTree.children[i].children;
+            }
+        }
+        callback(newTree);
+    });
 }
-
-var app  = express();
-var ROOT = './public';
 
 // Log all requests for debugging purposes
 app.use("*", function(req, res, next){
@@ -135,27 +136,44 @@ app.use("*", function(req, res, next){
     next();
 });
 
+// Request for a search
 app.get('/search/:phrase', function(req, res) {
-    res.send(getSearchStacks(req.params.phrase, (stackList) => {
+    getSearchStacks(req.params.phrase, (stackList) => {
         res.send(JSON.stringify(openSearchedNodes(stackList)));
-    })); // Should be sending tree structure pre-opened
+    });
 });
 
 // Request for tree nodes
 app.get('/dat/:nodeID', function(req, res) {
     findClickedNode(+req.params.nodeID, treeStructure, (result) => {
-        console.log(result);
         res.send(JSON.stringify(result));
     });
 });
 
-// Request recieved for main page
-app.get('/', function(req, res){
-    data = fs.readFileSync(ROOT + 'index.html');
+// Request for groups with similar members
+app.use(bodyParser.urlencoded({ extended: true}));
+app.use(bodyParser.json());
+app.post('/similar', function(req, res) {
+    search_list = JSON.parse(JSON.stringify(req.body.similar_groups));
+    search_list.push(req.body.token);
+    getSearchStacks(search_list, (stackList) => {
+        res.send(JSON.stringify(openSearchedNodes(stackList, {
+            origin: req.body.token,
+            similars: search_list
+        })));
+    });
 });
 
 // File server
 app.use(express.static(ROOT));
+
+// Request recieved for main page
+app.get('/', function(req, res){
+    data = fs.readFileSync(ROOT + '/index.html');
+    res.send(data);
+});
+
+
 
 app.listen(8080);
 console.log('golden')

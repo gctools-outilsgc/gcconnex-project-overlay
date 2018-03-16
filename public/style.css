@@ -34,7 +34,7 @@ box-shadow: 0px 1px 18px 4px #000000;
     cursor: pointer;
     float: right;
     font-family: Lato,'Helvetica Neue',Arial,Helvetica,sans-serif;
-    transition-duration: 1s;
+    transition-duration: 400ms;
 }
 #name-tag:hover {
   color: steelblue;
