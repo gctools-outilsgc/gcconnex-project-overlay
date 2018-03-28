@@ -28,8 +28,12 @@ def addIDs(root):
         if node['project'] == True:
             return
         for child in node['children']:
+            if child['name'] == 'allps':
+               del child
+               continue
             addID(child)
     addID(root)
+    root['children'].pop(0)
 
 addIDs(tree)
 

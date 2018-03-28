@@ -1,383 +1,476 @@
-// Clean out html stuff for the group names in the visualization
-function clean_name_for_svg(txt) {
-    return txt.replace("&#039;", "'");
-    // Add more here if (when) other text issues show up
-}
+var nodes = [];
+var links = [];
 
-var nodeOffset = 30;
-var nodeTextSize = '12px';
+var reset = {};
 
-var m = [20, 120, 20, 80],
-    w = 1280 - m[1] - m[3],
-    h = 800 - m[0] - m[2],
-    i = 0;
+/*width = 1000;
+height = 700;*/
 
-var root;
+width = $(window).width();
+height = $(window).height();
 
-var tree = d3.layout.tree()
-    .size([h, w]);
+maxGroupSize = 1000;
 
-var diagonal = d3.svg.diagonal()
-    .projection(function (d) { return [d.y, d.x]; });
+sizeScale = d3.scaleLinear()
+    .domain([1,maxGroupSize])
+    .range([3,7]);
 
-var vis = d3.select("#body").append("svg:svg")
-    .attr("width", w + m[1] + m[3])
-    .attr("height", h + m[0] + m[2])
-    .style('overflow', 'visible')
-    .classed("vis-container", true)
-    .call(d3.behavior.zoom().on("zoom", function() {
-        correctTranslation = [d3.event.translate[0] + m[3], d3.event.translate[1] + m[0]];
-        vis.attr("transform", "translate(" + correctTranslation + ")" + " scale(" + d3.event.scale + ")")
-    }))
-    .append("svg:g")
-    .attr("transform", "translate(" + m[3] + "," + m[0] + ")");
-    
-var backRect = vis.append("rect")
-    .attr("width", w *4)
-    .attr("height", h + m[0] + m[2])
-    .attr('x', -w*2)
-    .style("fill", "none")
-    .style("pointer-events", "all");
+var svg = d3.select("#body").append("svg:svg")
+    .attr("width", width)
+    .attr("height", height)
+    .attr("overflow", "visible!important")
+    .attr("position", "absolute")
+    .attr("transform", "translate(-350,0)scale(2,2)")
+    .call(d3.zoom().on("zoom", function () {
+        svg.attr("transform", d3.event.transform);
+    })).append("g");
 
-// Define the div for the tooltip
-var ttip = d3.select("body").append("div")
-    .attr("class", "tooltip")
-    .style("opacity", 0);
 
-// Add an introductory instruction to the visualization
-var introMessage = vis.append("svg:g")
-    .classed("intro-message", true)
-    .classed("hint", true)
-    .attr("transform", "translate(" + -80 + ", " + ((h / 2) - 20) + ")")
-    .style("opacity", 0);
-introMessage.append("svg:text")
-    .text("Click on the Communities node to begin exploring.")
-    .attr("fill", "#999");
-introMessage
-    .transition()
-    .delay(400)
-    .duration(1500)
-    .style("opacity", 1);
+color = d3.scaleOrdinal(d3.schemeCategory10);
 
-function toggleAll(d) {
-    if (d.children) {
-        d.children.forEach(toggleAll);
-        toggle(d);
+var view = svg.append("rect")
+    .attr("class", "view")
+    .attr("x", 0.5)
+    .attr("y", 0.5)
+    .attr("width", width * 4)
+    .attr("height", height * 2)
+    .attr("opacity", 0);
+
+function treeToNode(treeNode, parentNode = null) {
+    var x = 0, y = 0;
+    if (parentNode) {
+        x = parentNode.x;
+        y = parentNode.y;
+    }
+    return {
+        id: treeNode.name,
+        x: x,
+        y: y,
+        group: 1,
+        token: treeNode.token,
+        project: treeNode.project,
+        description: treeNode.description,
+        contributors: treeNode.contributors,
+        similar_groups: treeNode.similar_groups,
+        guid: treeNode.guid,
+        parent_nodes: treeNode.parent_nodes,
+        size: treeNode.size
     }
 }
 
-d3.json("data.json", function (json) {
-    root = json;
-    root.x0 = h / 2;
-    root.y0 = 1200; //1200
-    
-    // Close the tree to begin with
-    toggleAll(root);
-    update(root);
+d3.json('data.json', function (error, graph) {
+    // rearrange inital tree object (1)
+
+    nodes = [treeToNode(graph)];
+    links = [];
+
+    var simulation = d3.forceSimulation(nodes)
+        .force("charge", d3.forceManyBody().strength(-100)) // Use a function is strength for per-node forces
+        .force("link", d3.forceLink().id(function (d) { return d.token }).distance(50))
+        .force("x", d3.forceX())
+        .force("y", d3.forceY())
+        .alphaTarget(0)
+        .alphaDecay(0.01)
+        .on("tick", ticked);
+
+    var g = svg.append("g").attr("transform", "translate(" + width / 2 + "," + height / 2 + ")"),
+        link = g.append("g").attr("stroke", "#000").attr("stroke-width", 1.5).selectAll(".link"),
+        node = g.append("g").attr("stroke", "#fff").attr("stroke-width", 1.5).selectAll(".node");
+
+    restart();
+
+    function restart() {
+
+        node = node.data(nodes, function (d) { return d.token; });
+        node.exit().remove();
+
+        node = node.enter()
+            .append("g")
+            .attr("class", "nodegroup")
+            .append("text")
+            .text(function (d) {
+                if (d.id.length > 12)
+                    return d.id.substr(0, 12) + '...';
+                else
+                    return d.id;
+            })
+            .attr("y", function (d) { return -7 })
+            .classed("label", true)
+            .attr("fill", function (d) {
+                if (d.project) {
+                    return 'blue'// for now
+                } else {
+                    return 'slategray'
+                }
+            })
+            .select(function () { return this.parentNode; })
+            .append("circle")
+            // Handle long name mouseovers
+            .on("mouseenter", function (d) {
+                console.log(d);
+                d3.select(this.parentNode)
+                    .select("text")
+                    .text(function (d) { return d.id });
+            })
+            .on("mouseleave", function (d) {
+                var t;
+                if (d.id.length > 12)
+                    t = d.id.substr(0, 12) + '...';
+                else
+                    t = d.id;
+                d3.select(this.parentNode)
+                    .select("text")
+                    .text(t);
+            })
+            .attr("fill", function (d) {
+                if (d.project) {
+                    return color(d.id)
+                } else {
+                    return 'white'
+                }
+            })
+            .attr("stroke-width", '1px')
+            .attr("r", function (d) {
+                // Set relative to group size. If tag, randomize
+                if (d.size) {
+                    return (d.size < maxGroupSize ? sizeScale(d.size) : 7);
+                } else {
+                    return (Math.random() * 3) + 3;
+                }
+            })
+            .on('click', function (d, i) {
+                // A node has been clicked.
+                if (d.open && !d.project) {
+                    return;
+                }
+                d.open = true;
+                if (!d.project) {
+                    $.ajax('/dat/' + String(d.token), {
+                        success: function (data) {
+                            // Need function to process tree
+                            data = JSON.parse(data);
+                            function callNext(index, children) {
+                                setTimeout(function () {
+                                    // Just received a node. 
+                                    // Check if it is already present in the graph.
+                                    // If so, just add a link between d and that node
+                                    if (index >= children.length)
+                                        return;
+                                    var a = nodeInGraph(children[index]);
+                                    if (a) {
+                                        // Node is aleady in the graph, add a link to it
+                                        links.push({
+                                            source: d.token,
+                                            target: a,
+                                            value: 2
+                                        })
+                                    } else {
+                                        // Node is not in the graph
+                                        if (!children[index])
+                                            return;
+                                        nodes.push(treeToNode(children[index], d))
+                                        links.push({
+                                            source: d.token,
+                                            target: children[index].token,
+                                            value: 1
+                                        });
+                                        
+                                        let thisChild = treeToNode(children[index], d)
+                                        // Connect to already existing groups
+                                        // Iterate through other existing nodes looking for possible links
+                                        for (var i = 0; i < nodes.length; i++) {
+                                            if (thisChild.parent_nodes && !nodes[i].similar_groups) {
+                                                // This node is a tag
+                                                if (thisChild.parent_nodes.indexOf(nodes[i].id) !== -1) {
+                                                    links.push({
+                                                        source: nodes[i].token,
+                                                        target: thisChild.token,
+                                                        value: 1
+                                                    });
+                                                    continue;
+                                                }
+                                            }
+                                            if (!nodes[i].similar_groups || !thisChild.similar_groups)
+                                                continue;
+                                            if ((thisChild.similar_groups.indexOf(nodes[i].guid) !== -1)
+                                                || (nodes[i].similar_groups.indexOf(thisChild.guid) !== -1)) {
+                                                links.push({
+                                                    source: treeToNode(children[index], d).token,
+                                                    target: nodes[i].token,
+                                                    value: 1
+                                                });
+                                            }
+                                        }
+                                    }
+                                    restart();
+                                    callNext(++index, children)
+                                }, 100);
+                            }
+                            callNext(0, data.children);
+                        }
+                    });
+                } else {
+                    $(".project-info").modal('refresh');
+                    // Populate modal with this group's properties
+                    $(".project-info .project-name").html(d.id);
+                    $(".project-info .description p").html(d.description);
+                    $(".project-info .contrib-list").html(function () {
+                        outer_list = ""
+                        if (d.contributors) {
+                            for (var i = 0; i < d.contributors.length; i++) {
+                                outer_list += '<li><a href="https://gcconnex.gc.ca/profile/'+ /*d.usernames[i]*/'placeholder'   +'">' + d.contributors[i] + '</a></li>'
+                            }
+                        }
+                        return outer_list;
+                    })
+                    // Need to generate links to the above contributors profiles
+                    $(".project-info img").attr("src", "group_pictures/" + String(d.guid) + ".png");
+                    $(".project-info").modal('show');
+                    $(".project-info").modal({
+                        closeable: true,
+                        observeChanges: true,
+                        detachable: true
+                    });
+                    $('#visit-project').off('click').on("click", function() {
+                        window.location.href='https://gcconnex.gc.ca/groups/profile/'+ String(d.guid);
+                    })
+                    $('#get-similar').off("click").on("click", function () {
+                        getSimilars(d);
+                        $(".project-info").modal('hide');
+                    });
+                }
+            })
+
+            .select(function () { return this.parentNode; })
+            .merge(node);
+
+        //    testing
+        reset = function () {
+            restart();
+        }
+
+        // Apply the general update pattern to the links.
+        link = link.data(links, function (d) { return d.source.token + "-" + d.target.token; });
+        link.exit().remove();
+        link = link.enter()
+            .append("line")
+            .style("stroke", "#ccc")
+            .merge(link);
+
+        // Update and restart the simulation.
+        try { simulation.nodes(nodes); } catch (e) { console.log(e);}
+        try { simulation.force("link").links(links);} catch (e) { console.log(e);}
+        try { simulation.alpha(0.1).restart();} catch (e) { console.log(e);}
+        // These keep breaking. Throw away errors for now!
+    }
+
+    function ticked() {
+        node.attr("transform", function (d) { return 'translate(' + d.x + ',' + d.y + ')' })
+
+        link.attr("x1", function (d) { return d.source.x; })
+            .attr("y1", function (d) { return d.source.y; })
+            .attr("x2", function (d) { return d.target.x; })
+            .attr("y2", function (d) { return d.target.y; });
+    }
+
+    function getSimilars(d, final = false) {
+        // Final argument is used to stop endless calls to getSimilars
+        $.ajax({
+            type: 'POST',
+            url: "/similar",
+            data: {
+                token: d.token,
+                similar_groups: d.similar_groups,
+                network_graph: true,
+                parent_nodes: d.parent_nodes
+            },
+            success: function (data) {
+                var similars_data = JSON.parse(data);
+                $.ajax({
+                    type: 'POST',
+                    url: "/parents",
+                    data: {
+                        parent_nodes: d.parent_nodes,
+                        thisNodeGuid: d.guid
+                    },
+                    success : function (data) {
+                        var parent_data = JSON.parse(data);
+                        full_data = similars_data.concat(parent_data);
+                        for (var i=0;i<full_data.length;i++) {
+                            console.log(full_data[i]);
+                        }
+                        function callNext(index, children) {
+                            setTimeout(function () {
+                                if (index >= children.length)
+                                    return;
+                                var a = nodeInGraph(children[index]);
+                                let thisChild = treeToNode(children[index], d);                        
+                                if (a) {
+                                    links.push({
+                                        source: d.token,
+                                        target: a,
+                                        value: 1
+                                    });
+                                } else {
+                                    nodes.push(treeToNode(children[index], d))
+                                    links.push({
+                                        source: d.token,
+                                        target: children[index].token,
+                                        value: 1
+                                    });
+
+                                    // Connect to already existing groups
+                                    if (thisChild.project) {
+                                        for (var i = 0; i < nodes.length; i++) {
+                                            if (!nodes[i].similar_groups)
+                                                continue;
+                                            if ((thisChild.similar_groups.indexOf(nodes[i]) !== -1)
+                                                || (nodes[i].similar_groups.indexOf(thisChild.guid) !== -1)
+                                                || (thisChild.parent_nodes.indexOf(nodes[i].id) !== -1)) {
+                                                links.push({
+                                                    source: treeToNode(children[index], d).token,
+                                                    target: nodes[i].token,
+                                                    value: 1
+                                                });
+                                            }
+                                        }
+                                    }
+                                }
+                                restart();
+                                callNext(++index, children)
+                            }, 100);
+                        }
+                        
+                        callNext(0, full_data);
+                    }
+                });
+                
+            }
+        });
+    }
+
+    function getTags(d) {
+        
+    }
+
+    function nodeInGraph(node) {
+        var token = false;
+        for (var i = 0; i < nodes.length; i++) {
+            //console.log(nodes[i].id + ' vs ' + node.name);
+            if (nodes[i] && nodes[i].project && (nodes[i].id === node.name)) {
+                token = nodes[i].token;
+                console.log(token);
+            }
+        }
+        return token;
+    }
+    function tagInGraph(node) {
+        var token = false;
+        for (var i = 0; i < nodes.length; i++) {
+            //console.log(nodes[i].id + ' vs ' + node.name);
+            if (nodes[i] && (nodes[i].id === node.name)) {
+                token = nodes[i].token;
+                console.log(token);
+            }
+        }
+        return token;
+    }
+
+    // Pruning functions not yet in use
+    function prunePastDist(node, dist) {
+        function getLinks(node) {
+            currLinks = []
+            for (var i = 0; i < links.length; i++) {
+                if ((links[i].source === node.token) || (links[i].target === node.token)) {
+                    currLinks.push(links[i]);
+                }
+            }
+            return currLinks;
+        }
+        function getNode(token) {
+            for (var i = 0; i < nodes.length; i++) {
+                if (nodes[i].token === token) {
+                    return nodes[i];
+                }
+            }
+            console.log('node not found from guid ' + guid + 'in getNode');
+            return null; // Something went wrong
+        }
+        function pruneInner(node, i) {
+            if (i === 0) {
+                return;
+            }
+            // Find all the associated links
+            var currLinks = getLinks(node);
+            keepLinks += currLinks;
+            keepNodes.push(node);
+            --i;
+            // Still need throw parent nodes in here.
+            // shouldnt be using similar groups!!
+            for (var i = 0; i < currLinks.length; i++) {
+                // build a list of all nodes linking to this one
+                // source
+
+                //target
+                // Find this node
+                var nextNode = getNode(currLinks[i].token);
+
+                if (nextNode !== null) {
+                    // This is a group
+                    pruneInner(nextNode, i);
+                }
+            }
+        }
+        keepNodes = [];
+        keepLinks = [];
+        pruneInner(node, dist)
+        nodes = keepNodes;
+        links = keepLinks;
+    }
 });
 
-function update(source) {
-    var duration = d3.event && d3.event.altKey ? 5000 : 500;
-
-    // Compute the new tree layout.
-    var nodes = tree.nodes(root).reverse();
-
-    // Normalize for fixed-depth.
-    nodes.forEach(function (d) { d.y = (d.depth * 180)+nodeOffset; });
-
-    // Update the nodes…
-    var node = vis.selectAll("g.node")
-        .data(nodes, function (d) { return d.id || (d.id = ++i); });
-
-    // Enter any new nodes at the parent's previous position.
-    var nodeEnter = node.enter().append("svg:g")
-        .attr("class", "node")
-        .attr("transform", function (d) { return "translate(" +(source.y0) + "," + source.x0 + ")"; })
-        .on("mouseup", function (d) {
-            
-            if (!d.project) {
-                // Remove any instance of similarity lines
-                d3.selectAll(".sim-line")
-                    .transition()
-                    .duration(300)
-                    .attr("opacity", 0);
-            }
-                
-            // Ask for this node's children if it is closed
-            if (!d.project && !d.children) {
-                console.log('sending request for node token '+ d.token);
-                $.ajax('/dat/'+d.token,
-                    {
-                        success: function (data) {
-                            // Append child nodes onto d
-                            data = JSON.parse(data);
-                            console.log(data);
-                            d.children = null;
-                            d._children = data.children;
-                            toggle(d);
-                            update(d);
-                        }
-                    });
-            } else {
-                // If d is already open just close it
-                toggle(d);
-                update(d);
-            }
-        });
-    
-    // Add a circle for each new incoming node
-    nodeEnter.append("svg:circle")
-        .attr("r", 1e-6) //1e-6
-        .style("fill", function (d) { return !d.project ? "lightsteelblue" : "#fff"; });
-
-    // Add a label for each new node. Projects also get the ability to open modals
-    nodeText = nodeEnter.append('a')
-        .append("svg:text");
-    nodeText
-        .attr("x", function (d) { return d.project ? 10 : -10; })
-        .attr("dy", ".35em")
-        .attr("text-anchor", function (d) { return d.project ? "start" : "end"; })
-        .text(function (d) { return clean_name_for_svg(d.name); })
-        .style('fill', function (d) {
-            return d.project ? 'steelblue' : 'black';
-        })
-        .classed("proj-text", function (d) {
-            return d.project ? true : false;
-        })
-        .on("mouseup", function (d) {
-            // Hide the intro message upon interaction
-            introMessage
-                .transition()
-                .duration(500)
-                .style('opacity', 0);
-            // Check if this is a project (if so, launch a modal)
-            if (d.project === true) {
-                $(".project-info").modal('refresh');
-                // Populate modal with this group's properties
-                $(".project-info .project-name").html(d.name);
-                $(".project-info .description p").html(d.description);
-                $(".project-info .contrib-list").html(function() {
-                    outer_list = ""
-                    if (d.contributors) {
-                        for (var i=0;i<d.contributors.length;i++) {
-                            outer_list += "<li>"+d.contributors[i]+"</li>"
-                        }
-                    }
-                    return outer_list;
-                })
-                $(".project-info img").attr("src","group_pictures/"+String(d.guid)+".png");
-                $(".project-info").modal('show');
-                $(".project-info").modal({
-                    closeable: true,
-                    observeChanges: true,
-                    detachable: true
-                });
-                // Remember: remove previous handler before adding a new one
-                $('#get-similar').off("click").on("click", function() {
-                    // Remove any instance of similarity lines
-                    d3.selectAll(".sim-line")
-                        .transition()
-                        .duration(300)
-                        .attr("opacity", 0);
-                    $(".project-info").modal('hide');
-                    // Get tree containing similar groups + links
-                    $.ajax({
-                        type: "POST",
-                        url: "/similar",
-                        data: {
-                            token: d.token,
-                            similar_groups: d.similar_groups
-                        },
-                        success: function(data) {
-                            openSearchResults(data, function() {
-                                // Perform search through the tree for similars + origin
-                                sims = findSimilars()
-                                setTimeout(function() {
-                                    var simGroup = vis.append("g")
-                                        .classed("sim-group", true);
-                                        console.log('new data received:')
-                                    console.log(d);
-                                    function callNext(index, children) {
-                                        setTimeout(function() {
-                                            // Draw the arc between d and m
-                                            // calculate midpoints
-                                            var midX = (sims.origin.x + children[index].x) / 2;
-                                            var midY = sims.origin.y +100;
-                                            simGroup.append("path")
-                                                .classed("sim-line", true)
-                                                .attr("d", "M"+sims.origin.y+' '+sims.origin.x+
-                                                    ' Q '+400 +' '+ midX +' '+children[index].y+' '+children[index].x)
-                                                .attr("stroke", "gray")
-                                                .attr("stroke-dasharray", "5,5")
-                                                .attr("fill", "transparent")
-                                                .attr("stroke-width", 2)
-                                                .attr("opacity", 0)
-                                                .transition()
-                                                .duration(1000)
-                                                .attr("opacity", 1);
-                                            if (++index < children.length)
-                                                callNext(index, children);
-                                        }, 100)
-                                    }
-                                    callNext(0, sims.similars)
-                                }, 400) // Shouldn't be using timers, get this in a callback!!
-                                
-                                // Iterate through array drawing connections
-                            });
-                        } 
-                    });
-                })
-            }
-        })
-        .style("fill-opacity", 1e-6)
-        .style("cursor", "pointer");
-
-    // Transition nodes to their new position.
-    var nodeUpdate = node.transition()
-        .duration(duration)
-        .attr("transform", function (d) { return "translate(" + d.y + "," + d.x + ")"; });
-    
-    nodeUpdate.select("circle")
-        .attr("r", 6)
-        .style("fill", function (d) { return ((!d.children) && (!d.project)) ? "lightsteelblue" : "#fff"; });
-
-    nodeUpdate.select("text")
-        .style("fill-opacity", 1);
-
-    // Handle search results
-    nodeUpdate.select("text")
-        .style("fill", function (d) {
-            if (d.highlight === true) {
-                return 'red';
-            } else if (d.project === true) {
-                return 'steelblue';
-            } else {
-                return 'black';
-            }
-        });
-
-    // Transition exiting nodes to the parent's new position.
-    var nodeExit = node.exit().transition()
-        .duration(duration)
-        .attr("transform", function (d) { return "translate(" + source.y + "," + source.x + ")"; })
-        .remove();
-
-    nodeExit.select("circle")
-        .attr("r", 1e-6);
-
-    nodeExit.select("text")
-        .style("fill-opacity", 1e-6);
-
-    // Update the links…
-    var link = vis.selectAll("path.link")
-        .data(tree.links(nodes), function (d) { return d.target.id; });
-
-    // Enter any new links at the parent's previous position.
-    link.enter().insert("svg:path", "g")
-        .attr("class", "link")
-        .attr("d", function (d) {
-            var o = { x: source.x0, y: (source.y0) };
-            return diagonal({ source: o, target: o });
-        })
-        .transition()
-        .duration(duration)
-        .attr("d", diagonal);
-
-    // Transition links to their new position.
-    link.transition()
-        .duration(duration)
-        .attr("d", diagonal);
-
-    // Transition exiting nodes to the parent's new position.
-    link.exit().transition()
-        .duration(duration)
-        .attr("d", function (d) {
-            var o = { x: source.x, y: source.y };
-            return diagonal({ source: o, target: o });
-        })
-        .remove();
-
-    // Stash the old positions for transition.
-    nodes.forEach(function (d) {
-        d.x0 = d.x;
-        d.y0 = d.y;
+function sendSearch() {
+    var phrase = $("#search-box").val().toLowerCase(); // Grab the search term
+    $.ajax('/search/' + phrase, {
+        success: function(data) {
+            showSearchResults(getLeaves(JSON.parse(data), searchResult=true));
+        }
     });
 }
 
-// Toggle children.
-function toggle(d) {
-    if (d.children) {
-        d._children = d.children;
-        d.children = null;
-    } else {
-        d.children = d._children;
-        d._children = null;
-    }
-}
-
-// Let's make a recursive depth-first search to preserve stack order
-function sendSearch() {
-    // Remove any instance of similarity lines
-        d3.selectAll(".sim-line")
-            .transition()
-            .duration(300)
-            .attr("opacity", 0);
-        var phrase = $("#search-box").val().toLowerCase(); // Grab the search term
-        $.ajax('/search/'+phrase, {
-            success: openSearchResults
-        })
-}
-
-// Find origin and all similar. Put them in an array!
-function findSimilars() {
-    function findSimilarsInner(node) {
-        if (node.origin) {
-            origin = node;
-        } else if (node.similar) {
-            similars.push(node);
+function getLeaves(tree, searchResult = false) {
+    function getLeavesInner(node) {
+        if (node.project && node.highlight === true) {
+            leafNodes.push(treeToNode(node));
+            return;
         }
-        if (!node.children)
-            return; // Bottomed out
-        for (var i=0;i<node.children.length;i++) {
-            findSimilarsInner(node.children[i]);
+        if (!node.children) 
+            return;
+        for (var i =0;i<node.children.length;i++) 
+            getLeavesInner(node.children[i]);
+    }
+    leafNodes = [];
+    getLeavesInner(tree);
+    return leafNodes;
+}
+
+function showSearchResults(newNodes) {
+    nodes = newNodes;
+    links = [];
+    // Need to iterate through each to find links
+    for (var i=0;i<nodes.length;i++) {
+        for (var k=0;k<nodes.length;k++) {
+            if ((nodes[i].similar_groups.indexOf(nodes[k].guid) !== -1)
+                || (nodes[k].similar_groups.indexOf(nodes[i].guid) !== -1)) {
+                // This group is similar, create a link
+                console.log('found similar')
+                links.push({
+                    source: nodes[i].token,
+                    target: nodes[k].token,
+                    value: 1
+                });
+            }
         }
     }
-    var origin;
-    var similars = [];
-    findSimilarsInner(root);
-    return {
-        origin: origin,
-        similars: similars
-    };
-    // Should probably at some point verify an origin was found (should be)
-}
-
-
-function openSearchResults(newTree, callback = null) {
-    // Use callback when performing similarity search
-    // Hide the intro message upon interaction
-    introMessage
-        .transition()
-        .duration(500)
-        .style('opacity', 0);
-    hideIntro();
-    toggleAll(root);
-    update(root);
-    console.log(JSON.parse(newTree));
-    setTimeout(function () {
-        root = JSON.parse(newTree);
-        // Add root coordinate adjustments
-        root.x0 = h / 2;
-        root.y0 = 0;
-        update(root);
-        if (callback) callback();
-    }, 1000);
-}
-
-function hideIntro() {
-    introMessage
-        .transition()
-        .duration(500)
-        .style('opacity', 0);
-    $('.footer').attr('opacity', 0);
+    reset();
 }

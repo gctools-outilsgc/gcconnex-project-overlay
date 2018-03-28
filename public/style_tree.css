@@ -6,11 +6,6 @@ body {
   font-family: "Helvetica Neue", Helvetica;
 }
 
-svg:not(:root) {
-  /* Override semantic UI's svg rules */
-  overflow: visible!important;
-}
-
 #body {
   width: 1200px;
   margin: 0 auto;

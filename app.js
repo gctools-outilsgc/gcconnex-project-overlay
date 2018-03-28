@@ -129,6 +129,77 @@ findClickedNode = (nodeID, root, callback) => {
     });
 }
 
+// Return a list of parent nodes
+findParentNodes = (parentNodeNames, thisNodeGuid) => {
+    findParentsInner = (node) => {
+        if (parentNames.indexOf(node.name) !== -1) {
+            // Need to also check if any of children are target
+            // should be working on guids instead
+            if (node.children) {
+                node.children.forEach((d) => {
+                    if (d.guid == thisNodeGuid) {
+                        parentNodes.push(node);
+                        parentNames.splice(parentNames.indexOf(node.name),1);
+                    }
+                });
+            }
+        }
+        if (!node.children) {
+            return;
+        }
+        for (let i=0;i<node.children.length;i++) {
+            findParentsInner(node.children[i]);
+        }
+    }
+    let parentNodes = [];
+    let visitedNodes = [];
+    let parentNames = JSON.parse(JSON.stringify(parentNodeNames));
+    findParentsInner(treeStructure);
+    return parentNodes;
+}
+
+// This has problem of returning everying in the search stack
+// might need to just write a new search function for this
+just_leaves = (tree, origin = null) => {
+    find_leaves = (node) => {
+        if (node.project === true) {
+            if (origin && node.token === origin)
+                return
+            leaves.push(node);
+            return;
+        }
+        if (!node.children) {
+            return;
+        }
+        for (var i=0;i<node.children.length;i++) {
+            find_leaves(node.children[i]);
+        }
+    }
+    leaves = [];
+    find_leaves(tree);
+    return leaves;
+}
+
+findRelated = (tree, guids) => {
+    findRelatedInner = (node) => {
+        if (!(guids.indexOf(String(node.guid)) === -1) &&
+                (found_node_guids.indexOf(String(node.guid)) === -1)) {
+            nodes.push(node);
+            found_node_guids.push(String(node.guid));
+            return;
+        }
+        if (!node.children)
+            return;
+        for (var i=0;i<node.children.length;i++) {
+            findRelatedInner(node.children[i]);
+        }
+    }
+    nodes = [];
+    found_node_guids = []
+    findRelatedInner(tree);
+    return nodes;
+}
+
 // Log all requests for debugging purposes
 app.use("*", function(req, res, next){
     console.log(req.originalUrl);
@@ -153,13 +224,47 @@ app.get('/dat/:nodeID', function(req, res) {
 app.use(bodyParser.urlencoded({ extended: true}));
 app.use(bodyParser.json());
 app.post('/similar', function(req, res) {
+    if (req.body.network_graph) {
+        res.send(JSON.stringify(findRelated(treeStructure, req.body.similar_groups)));
+        return;
+    }
     search_list = JSON.parse(JSON.stringify(req.body.similar_groups));
     search_list.push(req.body.token);
+
     getSearchStacks(search_list, (stackList) => {
-        res.send(JSON.stringify(openSearchedNodes(stackList, {
+        var res_tree = openSearchedNodes(stackList, {
             origin: req.body.token,
             similars: search_list
-        })));
+        });
+        if (req.body.network_graph) {
+            res_str = just_leaves(res_tree, req.body.token);
+            console.log(res_str);
+            res.send(JSON.stringify(just_leaves(res_tree)));
+        } else {
+            res.send(JSON.stringify(res_tree));
+        }
+    });
+});
+
+app.post('/parents', function(req, res) {
+    res_obj = JSON.parse(JSON.stringify(findParentNodes(req.body.parent_nodes,
+                                                        req.body.thisNodeGuid)));
+    for (let i=0;i<res_obj.length;i++) {
+        res_obj[i].children = null;
+    }
+    res.send(JSON.stringify(res_obj));
+});
+
+app.get('/reload_dataset', function(req, res) {
+    fs.readFile('./tree.json', 'utf8', function (err, data) {
+        if (err) {
+            console.log(err);
+            res.send('Error loading the new dataset. Check console output.');
+            return
+        }
+        treeStructure = JSON.parse(data);
+        console.log('Reload dataset successful.');
+        res.send('done!');
     });
 });
 

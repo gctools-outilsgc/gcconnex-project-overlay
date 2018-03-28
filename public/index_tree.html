@@ -1,32 +1,20 @@
 <!DOCTYPE html>
-<script src="js/d3.v4.min.js"></script>
-<!--<link type="text/css" rel="stylesheet" href="style.css" />-->
-<script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
-  crossorigin="anonymous"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/1.11.8/semantic.min.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/1.11.8/semantic.min.js"></script>
-<link type="text/css" rel="stylesheet" href="style.css" />
-  <style>
-    svg text {
-      /*fill: black!important;*/
-      stroke-width: 0;
-      paint-order: stroke;
-      stroke: #000;
-      stroke-width: 0px;
-      font-size: 7px;
-      text-anchor: middle;
-      z-index: 100;
-      font-weight: 400;
-    }
+<html>
 
-    svg circle {
-      /*fill: white;*/
-      stroke: #000;
-      stroke-width: 1px;
-      z-index: 1;
-    }
-    
-</style>
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+    <link type="text/css" rel="stylesheet" href="style.css" />
+    <script type="text/javascript" src="js/d3.v3.min.js"></script>
+    <!--
+    <link rel="stylesheet" href="js/semantic.min.css" />
+    <script src="js/jquery.min.js"></script>
+    <script src="js/semantic.min.js"></script>
+    -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/1.11.8/semantic.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/1.11.8/semantic.min.js"></script>
+</head>
+
 <body>
     <div id="top-bar-overlay">
         <div id="top-bar">
@@ -65,7 +53,7 @@
         <div class="image content">
             <div class="ui medium image">
                 <img src="collab_logo.png"
-                    class="project-image" onerror="this.src = 'collab_logo.png'">
+                    class="project-image">
                 <div class="ui header">
                     Top Contributors
                 </div>
@@ -85,7 +73,7 @@
             <div class="ui black deny button">
                 Back
             </div>
-            <div class="ui positive right labeled icon button" id="visit-project">
+            <div class="ui positive right labeled icon button">
                 Visit project page
                 <i class="checkmark icon"></i>
             </div>
@@ -103,3 +91,5 @@
         </a>
     </div>
 </body>
+
+</html>
