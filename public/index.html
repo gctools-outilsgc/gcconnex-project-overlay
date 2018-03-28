@@ -1,51 +1,30 @@
 <!DOCTYPE html>
-<<<<<<< HEAD
-<script src="js/d3.v4.min.js"></script>
-<!--<link type="text/css" rel="stylesheet" href="style.css" />-->
-<script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
-  crossorigin="anonymous"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/1.11.8/semantic.min.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/1.11.8/semantic.min.js"></script>
-<link type="text/css" rel="stylesheet" href="style.css" />
-  <style>
-    svg text {
-      /*fill: black!important;*/
-      stroke-width: 0;
-      paint-order: stroke;
-      stroke: #000;
-      stroke-width: 0px;
-      font-size: 7px;
-      text-anchor: middle;
-      z-index: 100;
-      font-weight: 400;
-    }
-=======
-<html>
-
 <head>
     <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
-    <title>GCconnex Project Overlay</title>
-    <link type="text/css" rel="stylesheet" href="style.css" />
-    <script type="text/javascript" src="js/d3.v3.min.js"></script>
-    <!--
-    <link rel="stylesheet" href="js/semantic.min.css" />
-    <script src="js/jquery.min.js"></script>
-    <script src="js/semantic.min.js"></script>
-    -->
+    <script src="js/d3.v4.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/1.11.8/semantic.min.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/1.11.8/semantic.min.js"></script>
+    <link type="text/css" rel="stylesheet" href="style.css" />
+    <title>GCconnex Project Overlay</title>
+    <style>
+        svg text {
+            stroke-width: 0;
+            paint-order: stroke;
+            stroke: #000;
+            stroke-width: 0px;
+            font-size: 7px;
+            text-anchor: middle;
+            z-index: 100;
+            font-weight: 400;
+        }
+        svg circle {
+            stroke: #000;
+            stroke-width: 1px;
+            z-index: 1;
+        }
+    </style>
 </head>
->>>>>>> origin/master
-
-    svg circle {
-      /*fill: white;*/
-      stroke: #000;
-      stroke-width: 1px;
-      z-index: 1;
-    }
-    
-</style>
 <body>
     <div id="top-bar-overlay">
         <div id="top-bar">
@@ -74,7 +53,7 @@
     <div id="body">
     </div>
 
-    <!-- Build modals -->
+    <!-- Build modal -->
     <!-- Note: Everything in here will be populated on demand. All values are placeholders! -->
     <div class="ui modal project-info">
         <i class="close icon"></i>
@@ -122,8 +101,3 @@
         </a>
     </div>
 </body>
-<<<<<<< HEAD
-=======
-
-</html>
->>>>>>> origin/master
