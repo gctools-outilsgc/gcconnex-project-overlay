@@ -33,7 +33,6 @@ def addIDs(root):
                continue
             addID(child)
     addID(root)
-    root['children'].pop(0)
 
 addIDs(tree)
 
