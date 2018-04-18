@@ -1,9 +1,3 @@
-// Clean out html stuff for the group names in the visualization
-function clean_name_for_svg(txt) {
-    return txt.replace("&#039;", "'");
-    // Add more here if (when) other text issues show up
-}
-
 var nodeOffset = 30;
 var nodeTextSize = '12px';
 
@@ -51,7 +45,7 @@ var introMessage = vis.append("svg:g")
     .attr("transform", "translate(" + -80 + ", " + ((h / 2) - 20) + ")")
     .style("opacity", 0);
 introMessage.append("svg:text")
-    .text("Click on the Communities node to begin exploring.")
+    .text("Click on the Categories node to begin exploring.")
     .attr("fill", "#999");
 introMessage
     .transition()
@@ -69,7 +63,7 @@ function toggleAll(d) {
 d3.json("data.json", function (json) {
     root = json;
     root.x0 = h / 2;
-    root.y0 = 1200; //1200
+    root.y0 = 1200;
     
     // Close the tree to begin with
     toggleAll(root);
@@ -79,13 +73,13 @@ d3.json("data.json", function (json) {
 function update(source) {
     var duration = d3.event && d3.event.altKey ? 5000 : 500;
 
-    // Compute the new tree layout.
+    // Compute the new tree layout
     var nodes = tree.nodes(root).reverse();
 
-    // Normalize for fixed-depth.
+    // Normalize for fixed-depth
     nodes.forEach(function (d) { d.y = (d.depth * 180)+nodeOffset; });
 
-    // Update the nodes…
+    // Update the nodes
     var node = vis.selectAll("g.node")
         .data(nodes, function (d) { return d.id || (d.id = ++i); });
 
@@ -172,6 +166,9 @@ function update(source) {
                     observeChanges: true,
                     detachable: true
                 });
+                $('#visit-project').off('click').on('click', function() {
+                    window.location.href='https://gcconnex.gc.ca/groups/profile/' + String(d.guid);
+                });
                 // Remember: remove previous handler before adding a new one
                 $('#get-similar').off("click").on("click", function() {
                     // Remove any instance of similarity lines
@@ -220,9 +217,7 @@ function update(source) {
                                         }, 100)
                                     }
                                     callNext(0, sims.similars)
-                                }, 400) // Shouldn't be using timers, get this in a callback!!
-                                
-                                // Iterate through array drawing connections
+                                }, 400)// Iterate through array drawing connections
                             });
                         } 
                     });
@@ -268,7 +263,7 @@ function update(source) {
     nodeExit.select("text")
         .style("fill-opacity", 1e-6);
 
-    // Update the links…
+    // Update the links
     var link = vis.selectAll("path.link")
         .data(tree.links(nodes), function (d) { return d.target.id; });
 
@@ -315,7 +310,6 @@ function toggle(d) {
     }
 }
 
-// Let's make a recursive depth-first search to preserve stack order
 function sendSearch() {
     // Remove any instance of similarity lines
         d3.selectAll(".sim-line")
@@ -328,7 +322,7 @@ function sendSearch() {
         })
 }
 
-// Find origin and all similar. Put them in an array!
+// Find origin and all similar. 
 function findSimilars() {
     function findSimilarsInner(node) {
         if (node.origin) {
@@ -349,12 +343,9 @@ function findSimilars() {
         origin: origin,
         similars: similars
     };
-    // Should probably at some point verify an origin was found (should be)
 }
 
-
 function openSearchResults(newTree, callback = null) {
-    // Use callback when performing similarity search
     // Hide the intro message upon interaction
     introMessage
         .transition()
@@ -380,4 +371,47 @@ function hideIntro() {
         .duration(500)
         .style('opacity', 0);
     $('.footer').attr('opacity', 0);
+}
+
+// Add listeners for language changes
+$('#eng-toggle').on('click', function() {
+    changeLanguage("en");
+});
+$('#fr-toggle').on('click', function() {
+    changeLanguage("fr");
+});
+
+function changeLanguage(newLang) {
+    if (newLang === "en") {
+        $('#search-blurb').text('Search for projects or groups');
+        $('#search-button').text('Search');
+        $('#title-text').html('<strong>GC</strong>connex Project Overlay');
+        $('#name-tag').text('This page is fully open source. Check out the source code on Github!');
+        $('#top-contributors-title').text('Top Contributors');
+        $('#modal-back-button').text('Back');
+        $('#visit-project').html('Visit project page <i class="checkmark icon"></i>');
+        $('#project-description-title').text('Project description');
+        $('#get-similar').text('Show groups with similar members');
+        introMessage
+            .selectAll('text')
+            .text('Click on the Categories node to begin exploring.');
+    } else {
+        $('#search-blurb').text('Rechercher des groupes ou des projets');
+        $('#search-button').text('recherche');
+        $('#title-text').html('Superposition de projets de <strong>GC</strong>connex');
+        $('#name-tag').text('Cette page est entièrement open source. Découvrez le code source sur Github!');
+        $('#top-contributors-title').text('Meilleurs contributeurs');
+        $('#modal-back-button').text('Retourner');
+        $('#visit-project').html('Visiter le projet <i class="checkmark icon"></i>');
+        $('#project-description-title').text('Description de projet');
+        $('#get-similar').text('Groupes similaires');
+        introMessage
+            .selectAll('text')
+            .text('Cliquez sur le noeud Catégories pour commencer à explorer.');
+    }
+}
+
+// Clean out html for the group names
+function clean_name_for_svg(txt) {
+    return txt.replace("&#039;", "'");
 }

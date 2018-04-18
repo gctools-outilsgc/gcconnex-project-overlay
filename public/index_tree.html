@@ -3,7 +3,7 @@
 
 <head>
     <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
-    <link type="text/css" rel="stylesheet" href="style.css" />
+    <link type="text/css" rel="stylesheet" href="style_tree.css" />
     <script type="text/javascript" src="js/d3.v3.min.js"></script>
     <!--
     <link rel="stylesheet" href="js/semantic.min.css" />
@@ -18,17 +18,23 @@
 <body>
     <div id="top-bar-overlay">
         <div id="top-bar">
-            <div id="header" style="display:inline-block!important; width:420px!important">
-                <div style="float:left">
+            <div id="header" style="display:inline-block!important; width:500px!important">
+                <div style="float:left" id="title-text">
                     <strong>GC</strong>connex Project Overlay
                 </div>
-                <div style="float:right; padding-left:10px">
+                <div style="display: inline-block; margin-left:10px; vertical-align: middle; height: 100%;">
                     <img src="GCToolsSmall.png">
                 </div>
             </div>
+            <div id="lang-toggle">
+                <a id="eng-toggle" class="lang">en</a> | <a id="fr-toggle" class="lang">fr</a>
+            </div>
+            <div id="vis-toggle">
+                <a id="network-toggle" href="index.html">network graph</a>
+            </div>
 
-            <div>
-                <div class="search-info">
+            <div id="search-block">
+                <div class="search-info" id="search-blurb">
                     Search for projects or groups
                 </div>
                 <form action="javascript:sendSearch()">
@@ -54,7 +60,7 @@
             <div class="ui medium image">
                 <img src="collab_logo.png"
                     class="project-image">
-                <div class="ui header">
+                <div class="ui header" id="top-contributors-title">
                     Top Contributors
                 </div>
                 <ul class="contrib-list">
@@ -65,15 +71,15 @@
                 </div>
             </div>
             <div class="description">
-                <div class="ui header">Project description:</div>
+                <div class="ui header" id="project-description-title">Project description:</div>
                 <p>Project info</p>
             </div>
         </div>
         <div class="actions">
-            <div class="ui black deny button">
+            <div class="ui black deny button" id="modal-back-button">
                 Back
             </div>
-            <div class="ui positive right labeled icon button">
+            <div class="ui positive right labeled icon button" id="visit-project">
                 Visit project page
                 <i class="checkmark icon"></i>
             </div>
@@ -81,7 +87,7 @@
     </div>
 
     <!-- Begin visualization script-->
-    <script type="text/javascript" src="client.js"></script>
+    <script type="text/javascript" src="client_tree.js"></script>
 
     <div id="bottom-bar">
         <a href="https://github.com/ryanlacroix/gcconnex-project-overlay">

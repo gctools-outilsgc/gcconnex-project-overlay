@@ -33,7 +33,7 @@ box-shadow: 0px 1px 18px 4px #000000;
     transition: 500ms;
     cursor: pointer;
     float: right;
-    font-family: Lato,'Helvetica Neue',Arial,Helvetica,sans-serif;
+    font-family: 'Helvetica Neue',Arial,Helvetica,sans-serif;
     transition-duration: 400ms;
 }
 #name-tag:hover {
@@ -60,8 +60,35 @@ box-shadow: 0px 1px 18px 4px #000000;
   position: relative;
   background-color: #f7f7f7;
   -webkit-box-shadow: 0px 16px 28px 4px #F7F7F7; 
-box-shadow: 0px 16px 28px 4px #F7F7F7;
-  
+  box-shadow: 0px 16px 28px 4px #F7F7F7;
+}
+
+#title-text {
+  width: 85%;
+  text-align: right;
+}
+
+#lang-toggle {
+  display: inline-block;
+  margin-top: 35px;
+  margin-left: 20px;
+  font-size: 14px;
+  font-family: "Helvetica Neue", Helvetica!important;
+}
+#vis-toggle {
+  display: inline-block;
+  margin-top: 35px;
+  margin-left: 20px;
+}
+#search-block {
+  display: block;
+  float: left;
+}
+#network-toggle {
+  font-family: "Helvetica Nue", Helvetica!important;
+}
+.lang:hover {
+  cursor: pointer;
 }
 
 #chart, #header, #footer {

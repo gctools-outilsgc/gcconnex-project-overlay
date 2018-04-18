@@ -247,8 +247,15 @@ app.post('/similar', function(req, res) {
 });
 
 app.post('/parents', function(req, res) {
-    res_obj = JSON.parse(JSON.stringify(findParentNodes(req.body.parent_nodes,
+    let res_obj = {};
+    try {
+        res_obj = JSON.parse(JSON.stringify(findParentNodes(req.body.parent_nodes,
                                                         req.body.thisNodeGuid)));
+    } catch (e) {
+        res.send("0");
+        return;
+    }
+    
     for (let i=0;i<res_obj.length;i++) {
         res_obj[i].children = null;
     }

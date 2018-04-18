@@ -12,7 +12,7 @@ svg:not(:root) {
 }
 
 #body {
-  width: 1200px;
+  max-width: 1200px;
   margin: 0 auto;
   position: relative;
   
@@ -54,7 +54,7 @@ box-shadow: 0px 1px 18px 4px #000000;
   z-index: 100;
   position: relative;
   background-color: #f7f7f7;
-  width: 1200px;
+  max-width: 1200px;
   margin: 0 auto;
   
 }
@@ -66,7 +66,29 @@ box-shadow: 0px 1px 18px 4px #000000;
   background-color: #f7f7f7;
   -webkit-box-shadow: 0px 16px 28px 4px #F7F7F7; 
 box-shadow: 0px 16px 28px 4px #F7F7F7;
-  
+}
+
+#title-text {
+  width: 85%;
+  text-align: right;
+}
+
+#lang-toggle {
+  display: inline-block;
+  margin-top: 35px;
+  margin-left: 20px;
+}
+#vis-toggle {
+  display: inline-block;
+  margin-top: 35px;
+  margin-left: 20px;
+}
+#search-block {
+  display: block;
+  float: left;
+}
+.lang:hover {
+  cursor: pointer;
 }
 
 #chart, #header, #footer {
